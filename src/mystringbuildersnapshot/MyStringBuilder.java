@@ -1,13 +1,15 @@
 package mystringbuildersnapshot;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
+
 //Originator (Создатель)
 class MyStringBuilder {
     private char[] value;
     private int length;
 
     public MyStringBuilder() {
-        value = new char[16]; //capacity
+        value = new char[16];
         length = 0;
     }
 
@@ -17,24 +19,18 @@ class MyStringBuilder {
             length = 0;
         } else {
             value = new char[str.length() + 16];
-            for (int i = 0; i < str.length(); i++) {
-                value[i] = str.charAt(i);
-            }
+            System.arraycopy(str.toCharArray(), 0, value, 0, str.length());
             length = str.length();
         }
     }
 
     public MyStringBuilder append(String str) {
-        ensureCapacity(length + str.length());
-        for (int i = 0; i < str.length(); i++) {
-            value[length++] = str.charAt(i);
-        }
+        insertString(length, str);
         return this;
     }
 
     public MyStringBuilder append(char c) {
-        ensureCapacity(length + 1);
-        value[length++] = c;
+        insertString(length, String.valueOf(c));
         return this;
     }
 
@@ -42,20 +38,24 @@ class MyStringBuilder {
         if (offset < 0 || offset > length) {
             throw new IndexOutOfBoundsException("Index: " + offset + ", Length: " + length);
         }
-        ensureCapacity(length + str.length());
-        System.arraycopy(value, offset, value, offset + str.length(), length - offset);
-        for (int i = 0; i < str.length(); i++) {
-            value[offset + i] = str.charAt(i);
-        }
-        length += str.length();
+        insertString(offset, str);
         return this;
+    }
+
+    private void insertString(int offset, String str) {
+        ensureCapacity(length + str.length());
+        if(offset != length) {
+            System.arraycopy(value, offset, value, offset + str.length(), length - offset);
+        }
+        System.arraycopy(str.toCharArray(), 0, value, offset, str.length());
+        length += str.length();
     }
 
     public MyStringBuilder delete(int start, int end) {
         if (start < 0 || end > length || start > end) {
             throw new IndexOutOfBoundsException("Start: " + start + ", End: " + end + ", Length: " + length);
         }
-        if(start != end) {
+        if (start != end) {
             int numMoved = length - end;
             if(numMoved > 0) {
                 System.arraycopy(value, end, value, start, numMoved);
@@ -66,28 +66,25 @@ class MyStringBuilder {
     }
 
     private void ensureCapacity(int minCapacity) {
-
         if (minCapacity > value.length) {
             int newCapacity = Math.max(value.length * 2, minCapacity);
             value = Arrays.copyOf(value, newCapacity);
         }
     }
-
     // Создание снимка
     public StringBuilderMemento save() {
         return new StringBuilderMemento(value, length);
     }
-
     // Восстановление из снимка
     public void restore(StringBuilderMemento memento) {
         this.value = memento.getState();
         this.length = memento.getLength();
     }
-
-
     @Override
     public String toString() {
-        return new String(value, 0, length);
+        return IntStream.range(0, length)
+                .mapToObj(i -> String.valueOf(value[i]))
+                .reduce("", String::concat);
     }
 
     public int length() {

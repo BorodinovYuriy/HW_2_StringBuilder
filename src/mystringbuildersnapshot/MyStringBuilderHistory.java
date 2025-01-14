@@ -12,8 +12,8 @@ class MyStringBuilderHistory {
     }
 
     public StringBuilderMemento undo() {
-        if (history.size() > 0) {
-            return history.remove(history.size() - 1);
+        if (!history.isEmpty()) {
+            return history.removeLast();
         }
         return null;
     }
